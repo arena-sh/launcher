@@ -52,7 +52,9 @@ Requirements:
 After installing above, just run `build_win.bat`. Installation file will be created in `release/win` directory.
 
 #### MacOS
-Requirements: none
+Requirements:
+- xcode command line tools
+- actual xcode is not required
 
 Run `./build_osx.sh`. Both `.app` and `.dmg` releases will be created at`release/linux` directory. You only need to move the `.app` file around (preferably to `Applications/`) to make Finder detect the custom url protocol.
 
