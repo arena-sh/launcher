@@ -1,0 +1,5 @@
+on open location this_URL
+    set apploc to (path to me) 
+    set p to (POSIX path of apploc) & "/Contents/MacOS/launcher_main" 
+    do shell script p & " " & this_URL
+end open location
