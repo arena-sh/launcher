@@ -19,7 +19,7 @@ import Tkinter as tk
 from subprocess import Popen, PIPE
 
 API_ENDPOINT = "https://arena.sh"
-VERSION = "0.0.1"
+VERSION = "0.1.0"
 DEBUG=0
 T = None
 root = None
@@ -42,10 +42,6 @@ def print_log(msg):
 def debug_log(msg):
     if DEBUG:
         print_log(msg)
-
-if len(sys.argv) < 2:
-    print "Usage: launcher <join-url>"
-    sys.exit(1)
 
 def center_window(window, offset_x=0, offset_y=0):
     window.withdraw()
@@ -99,6 +95,12 @@ def launcher():
     if OS == 'macosx': 
         import os
         os.system('''/usr/bin/osascript -e 'tell app "Finder" to set frontmost of process "Python" to true' ''')
+
+    if len(sys.argv) < 2:
+        print_log("Please start this launcher by clicking \"JOIN\" at any server page.")
+        print_log("Visit https://arena.sh/ to browse games!")
+        end_app()
+        return
 
     # check args
     join_url = sys.argv[1]
@@ -168,11 +170,14 @@ def launcher():
             ask_download()
         else:
             no_dl_available_quit()
+        
+    end_app()
 
-
+def end_app():
     T.unbind("<Key>")
     T.bind("<Key>", anykey_exit)
     print_log("Hit any key to exit...")
+    T.focus_set()
 
 def anykey_exit(event):
     key = event.char

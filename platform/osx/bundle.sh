@@ -1,7 +1,7 @@
 #/bin/sh
 SOURCE=../..
 DEST=$SOURCE/release/osx
-APP_NAME=$DEST/Arena.app
+APP_NAME=$DEST/ArenaSH.app
 rm -rf $DEST
 rm -rf tmp.app
 mkdir -p $APP_NAME/Contents/Resources/Scripts
@@ -15,7 +15,7 @@ cp tmp.app/Contents/Resources/Scripts/main.scpt $APP_NAME/Contents/Resources/Scr
 cp tmp.app/Contents/Resources/applet.rsrc $APP_NAME/Contents/Resources/launcher.rsrc
 /usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string \"com.arenash.launcher\"" $APP_NAME/Contents/Info.plist
 /usr/libexec/PlistBuddy -c "Add :CFBundleName string \"Arena\"" $APP_NAME/Contents/Info.plist > /dev/null
-/usr/libexec/PlistBuddy -c "Add :CFBundleVersion string \"0.0.1\"" $APP_NAME/Contents/Info.plist
+/usr/libexec/PlistBuddy -c "Add :CFBundleVersion string \"0.1.0\"" $APP_NAME/Contents/Info.plist
 /usr/libexec/PlistBuddy -c "Add :CFBundleExecutable string \"launcher\"" $APP_NAME/Contents/Info.plist
 /usr/libexec/PlistBuddy -c "Add :CFBundleIconFile string \"app.icns\"" $APP_NAME/Contents/Info.plist
 /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" $APP_NAME/Contents/Info.plist

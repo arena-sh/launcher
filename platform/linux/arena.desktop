@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
 Name=ArenaSH Launcher
-Exec=HOME_SED/ArenaSH/launcher %u
+Exec=sh -c "\$HOME/ArenaSH/launcher %u"
 Terminal=false
 MimeType=x-scheme-handler/arena;

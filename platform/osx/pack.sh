@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
-SOURCE_APP=../../release/osx/Arena.app
+APP_NAME="ArenaSH.app"
+SOURCE_APP=../../release/osx/$APP_NAME
 DEST=../../release/osx/ArenaSH.dmg
 mkdir -p tmp/
 cp -r $SOURCE_APP tmp/
@@ -16,8 +17,8 @@ cp dmg_bg.png tmp/
 --window-size 800 413 \
 --eula "../../eula.txt" \
 --icon-size 100 \
---icon "Arena.app" 200 190 \
---hide-extension "Arena.app" \
+--icon "$APP_NAME" 200 190 \
+--hide-extension "$APP_NAME" \
 --app-drop-link 580 185 \
 "$DEST" \
 "tmp/"
