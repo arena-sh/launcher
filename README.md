@@ -26,7 +26,7 @@ Visit any server page and click JOIN at "Launcher" tab.
 For each platform, `arena://` url protocol is registered with the app. When the player clicks the JOIN link, it passes server address and hash of the launch command at the join page. Then, launcher requests the command again, compares the hash, and runs it.
 
 #### How are the games installed when not found in expected locations?
-If the universal zip of the game is available for the user's platform, launcher asks for confirmation, showing the size of the download first. Zip is only requested from official links published by the game's development team. After downloading, files are automatically extracted to `~/games` for Linux, `/Applications/games` for OSX and `c:\games` for Windows. No further action is taken after the extraction. In case you want to backup the downloaded zip, you can refer to `dl.zip` file created at the `/tmp/` (may vary for Windows) directory.
+If the universal zip of the game is available for the user's platform, launcher asks for confirmation, showing the size of the download first. Zip is only requested from official links published by the game's development team. After downloading, files are automatically extracted to `~/games` for Linux, `/Applications/games` for OSX and `c:\games` for Windows. No further action is taken after the extraction. In case you want to backup the downloaded zip, you can refer to the `/tmp/` (may vary for Windows) directory.
 
 
 #### What are the "installation notes" shown after extraction?

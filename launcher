@@ -10,6 +10,7 @@ import tempfile
 import time
 import traceback
 import urllib2
+import tarfile
 import zipfile
 
 import tkMessageBox
@@ -164,7 +165,8 @@ def launcher():
         dl_data = json.loads(response.read())
 
         # testing purposes
-        #dl_data["dl_link"] = "https://file-examples.com/wp-content/uploads/2017/02/zip_2MB.zip"
+        # dl_data["dl_link"] = "https://file-examples.com/wp-content/uploads/2017/02/zip_2MB.zip"
+        # dl_data["dl_link"] = "https://dev-files.blender.org/file/download/bwdp5reejwpkuh5i2oak/PHID-FILE-nui3bpuan4wdvd7yzjrs/sample.tar.gz"
 
         if dl_data["dl_link"]:
             ask_download()
@@ -189,7 +191,8 @@ def start_download():
     dl_active = True
     request = urllib2.urlopen(dl_data['dl_link']);
     file_size = int(request.info().getheaders("Content-Length")[0]) 
-    file_path = tempfile.gettempdir() + '/dl.zip'
+    file_name = dl_data['dl_link'].split('/')[-1]
+    file_path = tempfile.gettempdir() + '/' + file_name
     print_log("Downloading %s to %s" % (dl_data['dl_link'], file_path))
     file = open(file_path, 'wb')
     size = 0
@@ -210,7 +213,11 @@ def start_download():
     file.close()
     if percentage == 100:
         print_log("Download complete.") 
-        zip_ref = zipfile.ZipFile(file_path, 'r')
+        zip_ref = ""
+        if file_path.endswith('.zip'):
+            zip_ref = zipfile.ZipFile(file_path, 'r')
+        elif file_path.endswith('.tar.gz'): 
+            zip_ref = tarfile.open(file_path,'r')
         dest = os.path.expanduser("~") + "/games/"
 
         if OS == "macosx": 
