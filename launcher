@@ -33,7 +33,6 @@ cmd_data = None
 dl_data = None
 
 def print_log(msg):
-    print(msg)
     if T:
         time.sleep(0.1)
         T.insert(tk.END, str(msg)+"\n\n")
@@ -96,6 +95,10 @@ def launcher():
     if OS == 'macosx': 
         import os
         os.system('''/usr/bin/osascript -e 'tell app "Finder" to set frontmost of process "Python" to true' ''')
+    else:
+        root.lift()
+        root.call('wm', 'attributes', '.', '-topmost', True)
+        root.after_idle(root.call, 'wm', 'attributes', '.', '-topmost', False)
 
     if len(sys.argv) < 2:
         print_log("Please start this launcher by clicking \"JOIN\" at any server page.")
@@ -196,18 +199,17 @@ def start_download():
     print_log("Downloading %s to %s" % (dl_data['dl_link'], file_path))
     file = open(file_path, 'wb')
     size = 0
-    block_sz = 131072
+    block_sz = 8192
     percentage = 0
     while True and dl_active:
         buffer = request.read(block_sz)
         if not buffer:
             break
         size += len(buffer)
-        percentage = int(float(float(size) / float(file_size)) * 100)
+        percentage = int((float(size)/float(file_size))*100.0)
         file.write(buffer)
-        print "Downloading: " + str(percentage) + "%\t\t\r",
-        sys.stdout.flush()
-
+        #following causes 0.1 delay, only use it with test data
+        #debug_log("Downloading: " + str(percentage) + "%\t\t\r")
         pb["value"]=percentage
         dl_win.update()
     file.close()

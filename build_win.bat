@@ -8,3 +8,4 @@ md "../../release/win"
 endlocal
 move ArenaSH_setup.exe "../../release/win/"
 move "build/exe.win-amd64-2.7" "../../release/win/instdir"
+cd ../../
