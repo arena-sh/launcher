@@ -61,6 +61,10 @@ Section "Launcher" SecLauncher
 
   ;Create uninstaller
   WriteUninstaller "$INSTDIR\Uninstall.exe"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\ArenaSH" \
+                 "DisplayName" "ArenaSH Launcher"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\ArenaSH" \
+                 "UninstallString" "$\"$INSTDIR\uninstall.exe$\"" 
 
 SectionEnd
 
@@ -88,6 +92,7 @@ Section "Uninstall"
 
   DeleteRegKey /ifempty HKCU "Software\ArenaSH"
   DeleteRegKey HKCU "Software\Classes\arena"
+  DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\ArenaSH"
 
 SectionEnd
 
