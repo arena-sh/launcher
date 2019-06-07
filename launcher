@@ -20,7 +20,7 @@ import Tkinter as tk
 from subprocess import Popen, PIPE
 
 API_ENDPOINT = "https://arena.sh"
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 DEBUG=0
 T = None
 root = None
