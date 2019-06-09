@@ -20,12 +20,13 @@ import Tkinter as tk
 from subprocess import Popen, PIPE
 
 API_ENDPOINT = "https://arena.sh"
-VERSION = "0.1.1"
+VERSION = "0.2.0"
 DEBUG=0
 T = None
 root = None
 dl_win = None
 pb = None
+progress_txt = None
 dl_active = False
 run_after_dl = False
 OS = "n/a"
@@ -53,7 +54,7 @@ def center_window(window, offset_x=0, offset_y=0):
 
 # run the command
 def run_bash(cmd, pipe=PIPE):
-    print_log("Running:\n" + cmd_data["cmd"] + "\n")
+    print_log("Running:\n" + cmd_data["cmd"])
 
     if OS == 'windows':
         cmd_file = tempfile.gettempdir() + "/cmd.ps1"
@@ -170,7 +171,9 @@ def launcher():
 
         # testing purposes
         # dl_data["dl_link"] = "https://file-examples.com/wp-content/uploads/2017/02/zip_2MB.zip"
+        # dl_data["sha256"] = "894cca19bba2a6bc496bf72176630083443c951f9e62d4aa328180474a32e9c9"
         # dl_data["dl_link"] = "https://dev-files.blender.org/file/download/bwdp5reejwpkuh5i2oak/PHID-FILE-nui3bpuan4wdvd7yzjrs/sample.tar.gz"
+        # dl_data["sha256"] = "747b20fc197d680b33d7e6393d8ecd9037210d5fdb7165a702fefb87ae0a8d9a"
 
         if dl_data["dl_link"]:
             ask_download()
@@ -191,10 +194,11 @@ def anykey_exit(event):
         root.destroy()
 
 def start_download():
-    global dl_win, dl_data, pb, dl_active, run_after_dl
+    global dl_win, dl_data, pb, dl_active, run_after_dl, progress_txt
     dl_active = True
     request = urllib2.urlopen(dl_data['dl_link']);
     file_size = int(request.info().getheaders("Content-Length")[0]) 
+    file_size_mb = "{0:.2f}".format(float(file_size)/1024.0/1024.0)
     file_name = dl_data['dl_link'].split('/')[-1]
     file_path = tempfile.gettempdir() + '/' + file_name
     print_log("Downloading %s to %s" % (dl_data['dl_link'], file_path))
@@ -209,13 +213,40 @@ def start_download():
         size += len(buffer)
         percentage = int((float(size)/float(file_size))*100.0)
         file.write(buffer)
-        #following causes 0.1 delay, only use it with test data
-        #debug_log("Downloading: " + str(percentage) + "%\t\t\r")
+        # following causes 0.1 delay, only use it with test data
+        # debug_log("Downloading: " + str(percentage) + "%\t\t\r")
         pb["value"]=percentage
+        size_formatted = "{0:.2f}".format(float(size)/1024.0/1024.0)
+        progress_txt.config(text="%s MB / %s MB" % (size_formatted, file_size_mb))
         dl_win.update()
     file.close()
+
+    dl_win.quit()
+    dl_win.destroy()
+
     if percentage == 100:
         print_log("Download complete.") 
+
+        print_log("Verifying checksum...")
+
+        BUF_SIZE = 65536 
+        sha256 = hashlib.sha256()
+
+        with open(file_path, 'rb') as f:
+            while True:
+                data = f.read(BUF_SIZE)
+                if not data:
+                    break
+                sha256.update(data)
+
+        if dl_data['sha256'] != sha256.hexdigest():
+            print_log("Downloaded file doesn't match with the expected sha256. It might be damaged during transfer or file owner has modified the file.")
+            print_log("File: %s\n\nSha256 expected:\n%s\n\nSha256 found:\n%s" % (file_path, dl_data['sha256'], sha256.hexdigest()))
+            print_log("Exiting.")
+            return
+
+        print_log("Checksum complete.")
+
         zip_ref = ""
         if file_path.endswith('.zip'):
             zip_ref = zipfile.ZipFile(file_path, 'r')
@@ -233,12 +264,13 @@ def start_download():
         except Exception as e:
             pass
 
-        print_log("Unzipping to %s..." % dest)
+        print_log("Extracting to %s..." % dest)
         zip_ref.extractall(dest)
         zip_ref.close()
         print_log("Done.")
     else:
         print_log("Download canceled.")
+
     debug_log("run after: " + str(run_after_dl.get()))
     if run_after_dl.get():
         output,error,s = run_bash(cmd_data["cmd"])
@@ -249,8 +281,6 @@ def start_download():
             print_log("After Installation Notes")
             print_log(dl_data["after_install"])
             print_log("You can quit now and join again to see if dependencies are already met.")
-    dl_win.quit()
-    dl_win.destroy()
 
 def cancel_download():
     global dl_active
@@ -260,6 +290,7 @@ def ask_download():
     global dl_data
     global dl_win
     global pb
+    global progress_txt
     global run_after_dl
     request = urllib2.urlopen(dl_data['dl_link'])
     file_size = int(request.info().getheaders("Content-Length")[0]) 
@@ -267,16 +298,15 @@ def ask_download():
     result = tkMessageBox.askquestion("Download", "Game not found in any of expected directories, proceed to download and install? Download size: " + file_size_mb + " MB", icon='warning')
     if result == 'yes':
         dl_win = tk.Toplevel()
+        dl_win.resizable(False, False)
         dl_win.title("Downloading")
-        # dl_win.geometry("300x110")
         s = ttk.Style()
         s.theme_use("default")
         s.configure("TProgressbar", thickness=20)
-        pb = ttk.Progressbar(dl_win, orient="horizontal", length=200, mode="determinate")
+        pb = ttk.Progressbar(dl_win, orient="horizontal", length=250, mode="determinate")
         pb["value"]=0
         pb["maximum"]=100
-        #pb.pack()
-        pb.grid(row=0, column=0, pady=5, padx=50)
+        pb.grid(row=0, columnspan=3, pady=5, padx=40)
 
         run_after_dl = tk.IntVar()
         run_after_dl.set(0)
@@ -284,11 +314,13 @@ def ask_download():
             run_after = tk.Checkbutton(dl_win, variable=run_after_dl, text="Run after installation",  onvalue=1, offvalue=0) 
         else:
             run_after = tk.Label(dl_win, text="Please read dependency notes after the installation.")
-        run_after.grid(row=1, column=0)
-
+        run_after.grid(row=1, columnspan=3)
 
         cancel_button = ttk.Button(dl_win, text="Cancel", command=cancel_download)
-        cancel_button.grid(row=2, column=0, pady=4)
+        cancel_button.grid(row=2, column=0, pady=4, sticky=tk.E)
+        progress_txt = tk.Label(dl_win, text="0.00 MB / %s MB" % file_size_mb, width=17)
+        progress_txt.config(font=("TkDefaultFont",12))
+        progress_txt.grid(row=2, column=2, pady=4, sticky=tk.W)
 
         center_window(dl_win, offset_x=20, offset_y=60)
         dl_win.after(0, start_download) 
@@ -302,7 +334,7 @@ if __name__ == '__main__':
     root = tk.Tk()
     S = tk.Scrollbar(root)
     T = tk.Text(root, height=20, width=70)
-    T["bg"] = "#111111"
+    T["bg"] = "#111417"
     T["fg"] = "#EDEFF1"
     S.pack(side=tk.RIGHT, fill=tk.Y)
     T.pack(side=tk.LEFT, fill=tk.Y)
