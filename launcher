@@ -98,6 +98,8 @@ def launcher():
         app = NSRunningApplication.runningApplicationWithProcessIdentifier_(os.getpid())
         app.activateWithOptions_(NSApplicationActivateIgnoringOtherApps)
     else:
+        dirname, filename = os.path.split(sys.argv[0])
+        root.iconbitmap(dirname+'\\app.ico')
         root.lift()
         root.call('wm', 'attributes', '.', '-topmost', True)
         root.after_idle(root.call, 'wm', 'attributes', '.', '-topmost', False)

@@ -1,7 +1,7 @@
 import sys
 from cx_Freeze import setup,Executable
 
-includefiles = []
+includefiles = ['app.ico']
 includes = ['Tkinter']
 
 base = None
@@ -15,5 +15,5 @@ setup(
     author = 'ArenaSH',
     author_email = 'arenabash@gmail.com',
     options = {'build_exe': {'includes': includes, 'include_files': includefiles}},
-    executables = [Executable('../../launcher', base=base)]
+    executables = [Executable(script='../../launcher', base=base, icon="app.ico")]
 )
