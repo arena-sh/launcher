@@ -14,6 +14,7 @@ import tarfile
 import zipfile
 
 import tkMessageBox
+import tkFont
 import ttk
 import Tkinter as tk
 
@@ -320,8 +321,8 @@ def ask_download():
 
         cancel_button = ttk.Button(dl_win, text="Cancel", command=cancel_download)
         cancel_button.grid(row=2, column=0, pady=4, sticky=tk.E)
-        progress_txt = tk.Label(dl_win, text="0.00 MB / %s MB" % file_size_mb, width=17)
-        progress_txt.config(font=("TkDefaultFont",12))
+        label_font = tkFont.Font(family='Arial', size=9)
+        progress_txt = tk.Label(dl_win, text="0.00 MB / %s MB" % file_size_mb, font=label_font,width=17)
         progress_txt.grid(row=2, column=2, pady=4, sticky=tk.W)
 
         center_window(dl_win, offset_x=20, offset_y=60)
