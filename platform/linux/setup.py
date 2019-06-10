@@ -3,6 +3,7 @@ from cx_Freeze import setup,Executable
 
 includefiles = []
 includes = ['Tkinter']
+packages = ['pkg_resources._vendor']
 
 base = None
 if (sys.platform == 'win32'):
@@ -14,6 +15,6 @@ setup(
     description = 'ArenaSH Game Launcher',
     author = 'ArenaSH',
     author_email = 'arenabash@gmail.com',
-    options = {'build_exe': {'includes': includes, 'include_files': includefiles}},
+    options = {'build_exe': {'includes': includes, 'include_files': includefiles, 'packages':packages}},
     executables = [Executable(script='../../launcher', base=base)]
 )
