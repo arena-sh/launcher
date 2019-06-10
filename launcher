@@ -349,7 +349,7 @@ def ask_download():
     file_size = int(request.info().getheaders("Content-Length")[0]) 
     file_size_mb = "{0:.1f}".format(float(file_size)/1024.0/1024.0)
 
-    choice = ChoiceDialog(root, "Game not found in any of expected directories, you either proceed to download or choose a custom path to continue:", file_size_mb).show()
+    choice = ChoiceDialog(root, "Game not found in any of expected directories, you can either download or choose a custom path to continue:", file_size_mb).show()
     run_after_dl = tk.IntVar()
     if choice == 2:
         run_after_dl.set(1)
