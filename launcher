@@ -20,6 +20,7 @@ import ttk
 import Tkinter as tk
 
 from subprocess import Popen, PIPE
+from pkg_resources import parse_version
 
 API_ENDPOINT = "https://arena.sh"
 VERSION = "0.2.1"
@@ -91,6 +92,10 @@ def detect_symlinks():
 def launcher_wrapper():
     try:
         launcher()
+        T.unbind("<Key>")
+        T.bind("<Key>", anykey_exit)
+        print_log("Hit any key to exit...")
+        T.focus_set()
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         print_log("".join(traceback.format_exception(exc_type, exc_value, exc_traceback)))
@@ -127,7 +132,6 @@ def launcher():
     if len(sys.argv) < 2:
         print_log("Please start this launcher by clicking \"JOIN\" at any server page.")
         print_log("Visit https://arena.sh/ to browse games!")
-        end_app()
         return
 
     # show symlinks
@@ -165,6 +169,14 @@ def launcher():
     cmd_data = json.loads(response.read())
     debug_log(cmd_data)
 
+    # check launcher version
+    if parse_version(VERSION) < parse_version(cmd_data["ln_ver_current"]):
+        print_log("Newer version (%s) for the launcher is available." % cmd_data["ln_ver_current"])
+
+    if parse_version(VERSION) < parse_version(cmd_data["ln_ver_min"]):
+        print_log("Minimum version of launcher should be %s to run this game \ncorrectly. Please update your launcher." % cmd_data["ln_ver_min"])
+        return
+
     # check hash of command before run
     cmd_sha1 = hashlib.sha1(cmd_data['cmd']).hexdigest()
     if sha1 == cmd_sha1:
@@ -172,6 +184,7 @@ def launcher():
     else:
         print_log("Incorrect command hash.")
         return
+
 
     if token:
         cmd_data['cmd'] = cmd_data['cmd'].replace('TOKEN_HERE', token, 1)
@@ -199,19 +212,11 @@ def launcher():
         # dl_data["sha256"] = "894cca19bba2a6bc496bf72176630083443c951f9e62d4aa328180474a32e9c9"
         # dl_data["dl_link"] = "https://dev-files.blender.org/file/download/bwdp5reejwpkuh5i2oak/PHID-FILE-nui3bpuan4wdvd7yzjrs/sample.tar.gz"
         # dl_data["sha256"] = "747b20fc197d680b33d7e6393d8ecd9037210d5fdb7165a702fefb87ae0a8d9a"
-
         if dl_data["dl_link"]:
             ask_download()
         else:
             no_dl_available_quit()
         
-    end_app()
-
-def end_app():
-    T.unbind("<Key>")
-    T.bind("<Key>", anykey_exit)
-    print_log("Hit any key to exit...")
-    T.focus_set()
 
 def anykey_exit(event):
     key = event.char
@@ -304,7 +309,6 @@ def cancel_download():
 class ChoiceDialog(tk.Toplevel):
     def __init__(self, parent, prompt, file_size_mb):
         tk.Toplevel.__init__(self, parent)
-        # self.geometry("350x140")
         self.resizable(0,0)
         self.var = tk.IntVar()
         self.var.set(1)
