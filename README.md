@@ -36,10 +36,10 @@ Installations notes are mostly for Linux users where dependencies should also be
 While there is no option to choose specific paths for games, you can still have a workaround and create a symlink on an expected location, that would make it work.
 
 #### Is this launcher secure?
-ArenaSH launcher is completely open-source and requires no admin rights. It actually consists of 300 lines of Python. Launch commands are hash checked when requested from server, so users always run what they see. All games listed in the platform are also open-source. For private servers, passwords are replaced by launcher utilizing the `TOKEN_HERE` placeholder, so it never reaches to the platform. 
+ArenaSH launcher is completely open-source and requires no admin rights. It actually consists of few hundred lines of Python. Launch commands are hash checked when requested from server, so users always run what they see. All games listed in the platform are also open-source. For private servers, passwords are replaced by launcher utilizing the `TOKEN_HERE` placeholder, so it never reaches to the platform. 
 
 #### I'm getting warnings by my anti-virus software on Windows
-Those are false positives as the windows installer is built by NSIS. We will continue to submit the launcher to particular anti-virus company to validate with them further. Also remember that you can always build the launcher yourself without downloading (see build instructions below).
+Those are false positives but please feel free to open an [issue](https://github.com/arena-sh/launcher/issues) if you discover one. While app already covers most of the popular anti-virus software already, we will continue to submit the launcher to rest. Also remember that you can always build the launcher yourself without downloading (see build instructions below).
 
 
 ### Build Instructions

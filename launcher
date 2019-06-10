@@ -14,6 +14,7 @@ import tarfile
 import zipfile
 
 import tkMessageBox
+import tkFileDialog
 import tkFont
 import ttk
 import Tkinter as tk
@@ -21,7 +22,7 @@ import Tkinter as tk
 from subprocess import Popen, PIPE
 
 API_ENDPOINT = "https://arena.sh"
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 DEBUG=0
 T = None
 root = None
@@ -55,7 +56,7 @@ def center_window(window, offset_x=0, offset_y=0):
 
 # run the command
 def run_bash(cmd, pipe=PIPE):
-    print_log("Running:\n" + cmd_data["cmd"])
+    print_log("Running:\n" + cmd)
 
     if OS == 'windows':
         cmd_file = tempfile.gettempdir() + "/cmd.ps1"
@@ -69,6 +70,23 @@ def run_bash(cmd, pipe=PIPE):
     debug_log("error:\n"+ error + "\n")
     debug_log("return code:\n"+ str(s.returncode))
     return output,error,s
+
+def detect_symlinks():
+    target = "~/games/"
+    link_type = "symlink"
+    if OS == "windows":
+        target = "c:\games\\"
+        link_type = "junction"
+    elif OS == "macosx":
+        target = "/Applications/games/"
+
+    detected = []
+    if os.path.exists(target):
+        for p in os.listdir(target):
+            if p.startswith("arena-sh-"):
+                detected.append(target+p)
+    if detected:
+        print_log("Configured game %ss:\n%s" % (link_type, "\n".join(sorted(detected))))
 
 def launcher_wrapper():
     try:
@@ -99,8 +117,9 @@ def launcher():
         app = NSRunningApplication.runningApplicationWithProcessIdentifier_(os.getpid())
         app.activateWithOptions_(NSApplicationActivateIgnoringOtherApps)
     else:
-        dirname, filename = os.path.split(sys.argv[0])
-        root.iconbitmap(dirname+'\\app.ico')
+        if OS == 'windows':
+            dirname, filename = os.path.split(sys.argv[0])
+            root.iconbitmap(dirname+'\\app.ico')
         root.lift()
         root.call('wm', 'attributes', '.', '-topmost', True)
         root.after_idle(root.call, 'wm', 'attributes', '.', '-topmost', False)
@@ -110,6 +129,9 @@ def launcher():
         print_log("Visit https://arena.sh/ to browse games!")
         end_app()
         return
+
+    # show symlinks
+    detect_symlinks()
 
     # check args
     join_url = sys.argv[1]
@@ -274,20 +296,44 @@ def start_download():
     else:
         print_log("Download canceled.")
 
-    debug_log("run after: " + str(run_after_dl.get()))
-    if run_after_dl.get():
-        output,error,s = run_bash(cmd_data["cmd"])
-        if s.returncode != 0 or (OS == 'windows' and error):
-            print_log("Game not found.") 
-    else:
-        if dl_data["after_install"]:
-            print_log("After Installation Notes")
-            print_log(dl_data["after_install"])
-            print_log("You can quit now and join again to see if dependencies are already met.")
 
 def cancel_download():
     global dl_active
     dl_active = False
+
+class ChoiceDialog(tk.Toplevel):
+    def __init__(self, parent, prompt, file_size_mb):
+        tk.Toplevel.__init__(self, parent)
+        # self.geometry("350x140")
+        self.resizable(0,0)
+        self.var = tk.IntVar()
+        self.var.set(1)
+        self.ok_clicked = False
+        self.label = tk.Label(self, text=prompt, wraplength=300, justify=tk.LEFT, padx=10, pady=2)
+        self.ok_button = ttk.Button(self, text="OK", command=self.on_ok)
+        self.cancel_button = ttk.Button(self, text="Cancel", command=self.on_cancel)
+        self.label.pack(side="top", fill="x")
+	R1 = tk.Radiobutton(self, text="Download (%s MB)" % file_size_mb, variable=self.var, value=1)
+	R1.pack(anchor = tk.W, padx=20, pady=2)
+	R2 = tk.Radiobutton(self, text="Choose existing", variable=self.var, value=2)
+	R2.pack(anchor = tk.W, padx=20)
+        self.ok_button.pack(side="right",padx=2,pady=4)
+        self.cancel_button.pack(side="right",padx=2, pady=4)
+        center_window(self, offset_x=80, offset_y=0)
+
+    def on_ok(self, event=None):
+        self.ok_clicked = True
+        self.destroy()
+        
+    def on_cancel(self, event=None):
+        self.destroy()
+
+    def show(self):
+        self.wm_deiconify()
+        self.wait_window()
+        if self.ok_clicked:
+            return self.var.get()
+        return -1
 
 def ask_download():
     global dl_data
@@ -298,36 +344,72 @@ def ask_download():
     request = urllib2.urlopen(dl_data['dl_link'])
     file_size = int(request.info().getheaders("Content-Length")[0]) 
     file_size_mb = "{0:.1f}".format(float(file_size)/1024.0/1024.0)
-    result = tkMessageBox.askquestion("Download", "Game not found in any of expected directories, proceed to download and install? Download size: " + file_size_mb + " MB", icon='warning')
-    if result == 'yes':
+
+    choice = ChoiceDialog(root, "Game not found in any of expected directories, you either proceed to download or choose a custom path to continue:", file_size_mb).show()
+    run_after_dl = tk.IntVar()
+    if choice == 2:
+        run_after_dl.set(1)
+        answer = tkFileDialog.askdirectory(parent=root, initialdir=os.getcwd(), title="Please select a folder:")
+        game_code = cmd_data["game_code"]
+        symlink_name = "arena-sh-%s" % game_code
+        if OS == "windows":
+            os.popen("mkdir c:\games 2> NUL")
+            os.popen("rd c:\games\%s 2> NUL" % symlink_name)
+            os.popen("mklink /J c:\games\%s \"%s\"" % (symlink_name, answer))
+            print_log("Junction is created in c:\games")
+        else:
+            if OS == "macosx":
+                dest = "/Applications/games"
+            else:
+                dest = "~/games"
+            run_bash("mkdir -p %s" % dest) 
+            run_bash("rm -rf %s/%s" % (dest, symlink_name))
+            run_bash("ln -s %s %s/%s" % (answer, dest, symlink_name))
+            print_log("Symlink is created in %s" % dest)
+    elif choice == 1:
+        run_after_dl.set(0)
         dl_win = tk.Toplevel()
         dl_win.resizable(False, False)
         dl_win.title("Downloading")
-        s = ttk.Style()
-        s.theme_use("default")
-        s.configure("TProgressbar", thickness=20)
         pb = ttk.Progressbar(dl_win, orient="horizontal", length=250, mode="determinate")
         pb["value"]=0
         pb["maximum"]=100
         pb.grid(row=0, columnspan=3, pady=5, padx=40)
 
-        run_after_dl = tk.IntVar()
-        run_after_dl.set(0)
         if not dl_data["after_install"]:
             run_after = tk.Checkbutton(dl_win, variable=run_after_dl, text="Run after installation",  onvalue=1, offvalue=0) 
         else:
             run_after = tk.Label(dl_win, text="Please read dependency notes after the installation.")
+
         run_after.grid(row=1, columnspan=3)
 
         cancel_button = ttk.Button(dl_win, text="Cancel", command=cancel_download)
         cancel_button.grid(row=2, column=0, pady=4, sticky=tk.E)
-        label_font = tkFont.Font(family='Arial', size=9)
+
+        label_font = tkFont.Font(family='Arial', size=12)
+        if OS == "windows":
+            label_font = tkFont.Font(family='Arial', size=9)
+
         progress_txt = tk.Label(dl_win, text="0.00 MB / %s MB" % file_size_mb, font=label_font,width=17)
         progress_txt.grid(row=2, column=2, pady=4, sticky=tk.W)
 
-        center_window(dl_win, offset_x=20, offset_y=60)
+        center_window(dl_win, offset_x=80, offset_y=50)
         dl_win.after(0, start_download) 
         dl_win.mainloop()
+    else:
+        print_log("No actions to take.")
+
+    if choice != -1:
+        debug_log("run after: " + str(run_after_dl.get()))
+        if run_after_dl.get():
+            output,error,s = run_bash(cmd_data["cmd"])
+            if s.returncode != 0 or (OS == 'windows' and error):
+                print_log("Game not found.") 
+        else:
+            if dl_data["after_install"]:
+                print_log("After Installation Notes")
+                print_log(dl_data["after_install"])
+                print_log("You can quit now and join again to see if dependencies are already met.")
 
 def no_dl_available_quit():
     tkMessageBox.showinfo("Manual installation needed", "Game not found in the expected location and universal zip is not available. You can install the game at it's official website.", icon='warning')
@@ -348,5 +430,8 @@ if __name__ == '__main__':
     root.after(0, launcher_wrapper)
     root.title("arena.sh launcher")
     root.resizable(False, False)
+    s = ttk.Style()
+    s.theme_use("default")
+    s.configure("TProgressbar", thickness=20)
     tk.mainloop()
 

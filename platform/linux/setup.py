@@ -10,10 +10,10 @@ if (sys.platform == 'win32'):
 
 setup(
     name = 'ArenaSH',
-    version = '0.2.0',
+    version = '0.2.1',
     description = 'ArenaSH Game Launcher',
     author = 'ArenaSH',
     author_email = 'arenabash@gmail.com',
     options = {'build_exe': {'includes': includes, 'include_files': includefiles}},
-    executables = [Executable('../../launcher', base=base)]
+    executables = [Executable(script='../../launcher', base=base)]
 )
