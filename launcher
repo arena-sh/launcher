@@ -23,7 +23,7 @@ from subprocess import Popen, PIPE
 from pkg_resources import parse_version
 
 API_ENDPOINT = "https://arena.sh"
-VERSION = "0.2.1"
+VERSION = "0.2.2"
 DEBUG=0
 T = None
 root = None
@@ -76,7 +76,7 @@ def detect_symlinks():
     target = "~/games/"
     link_type = "symlink"
     if OS == "windows":
-        target = "c:\games\\"
+        target = os.path.expanduser("~\\games\\") 
         link_type = "junction"
     elif OS == "macosx":
         target = "/Applications/games/"
@@ -282,12 +282,13 @@ def start_download():
             zip_ref = zipfile.ZipFile(file_path, 'r')
         elif file_path.endswith('.tar.gz'): 
             zip_ref = tarfile.open(file_path,'r')
+
         dest = os.path.expanduser("~") + "/games/"
 
         if OS == "macosx": 
             dest = "/Applications/games/"
         elif OS == "windows":
-            dest = "c:/games/"
+            dest = os.path.expanduser("~\\games\\")
 
         try:
             os.makedirs(dest)
@@ -357,10 +358,11 @@ def ask_download():
         game_code = cmd_data["game_code"]
         symlink_name = "arena-sh-%s" % game_code
         if OS == "windows":
-            os.popen("mkdir c:\games 2> NUL")
-            os.popen("rd c:\games\%s 2> NUL" % symlink_name)
-            os.popen("mklink /J c:\games\%s \"%s\"" % (symlink_name, answer))
-            print_log("Junction is created in c:\games")
+            dest = os.path.expanduser("~\\games\\")
+            os.popen("mkdir %s 2> NUL" % dest)
+            os.popen("rd %s%s 2> NUL" % (dest,symlink_name))
+            os.popen("mklink /J %s%s \"%s\"" % (dest,symlink_name, answer))
+            print_log("Junction is created in %s" % dest)
         else:
             if OS == "macosx":
                 dest = "/Applications/games"

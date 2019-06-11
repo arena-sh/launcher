@@ -3,7 +3,7 @@
 !define MUI_UNICON "app.ico"
 
 ;Name and file
-Name "ArenaSH Launcher"
+Name "ArenaSH Launcher v0.2.2"
 OutFile "ArenaSH_setup.exe"
 
 ;Default installation folder
