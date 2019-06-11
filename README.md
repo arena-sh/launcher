@@ -33,7 +33,7 @@ If the universal zip of the game is available for the user's platform, launcher 
 Installations notes are mostly for Linux users where dependencies should also be installed in order to run the game properly. It suggests few apt-get hints about how to make it work as expected. Second run will always attempt to run the game.
 
 #### I already have the game. Can I keep my game directory somewhere else than the expected locations?
-While there is no option to choose specific paths for games, you can still have a workaround and create a symlink on an expected location, that would make it work.
+When a game is not found, app will provide both the download and choose path options. User can choose the secondary option to pick a custom path of the game. In that case, a symlink/junction will be created under `games` directory of the user with naming of `arena-sh-<gamecode>`. While this link represent the location of the selected directory, you can also unlink by safely deleting it from the `~/games` directory.
 
 #### Is this launcher secure?
 ArenaSH launcher is completely open-source and requires no admin rights. It actually consists of few hundred lines of Python. Launch commands are hash checked when requested from server, so users always run what they see. All games listed in the platform are also open-source. For private servers, passwords are replaced by launcher utilizing the `TOKEN_HERE` placeholder, so it never reaches to the platform. 
