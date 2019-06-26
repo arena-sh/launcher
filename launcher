@@ -393,23 +393,24 @@ def ask_download():
     if choice == 2:
         run_after_dl.set(1)
         answer = tkFileDialog.askdirectory(parent=root, initialdir=os.getcwd(), title="Please select a folder:")
-        game_code = cmd_data["game_code"]
-        symlink_name = "arena-sh-%s" % game_code
-        if OS == "windows":
-            dest = os.path.expanduser("~\\games\\")
-            os.popen("mkdir %s 2> NUL" % dest)
-            os.popen("rd %s%s 2> NUL" % (dest,symlink_name))
-            os.popen("mklink /J %s%s \"%s\"" % (dest,symlink_name, answer))
-            print_log("Junction is created in %s" % dest)
-        else:
-            if OS == "macosx":
-                dest = "/Applications/games"
+        if answer:
+            game_code = cmd_data["game_code"]
+            symlink_name = "arena-sh-%s" % game_code
+            if OS == "windows":
+                dest = os.path.expanduser("~\\games\\")
+                os.popen("mkdir %s 2> NUL" % dest)
+                os.popen("rd %s%s 2> NUL" % (dest,symlink_name))
+                os.popen("mklink /J %s%s \"%s\"" % (dest,symlink_name, answer))
+                print_log("Junction is created in %s" % dest)
             else:
-                dest = "~/games"
-            run_bash("mkdir -p %s" % dest) 
-            run_bash("rm -rf %s/%s" % (dest, symlink_name))
-            run_bash("ln -s %s %s/%s" % (answer, dest, symlink_name))
-            print_log("Symlink is created in %s" % dest)
+                if OS == "macosx":
+                    dest = "/Applications/games"
+                else:
+                    dest = "~/games"
+                run_bash("mkdir -p %s" % dest) 
+                run_bash("rm -rf %s/%s" % (dest, symlink_name))
+                run_bash("ln -s %s %s/%s" % (answer, dest, symlink_name))
+                print_log("Symlink is created in %s" % dest)
     elif choice == 1:
         run_after_dl.set(0)
         dl_win = tk.Toplevel()
