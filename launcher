@@ -23,7 +23,7 @@ from subprocess import Popen, PIPE
 from pkg_resources import parse_version
 
 API_ENDPOINT = "https://arena.sh"
-VERSION = "0.2.2"
+VERSION = "0.2.3"
 DEBUG=0
 T = None
 root = None
@@ -92,13 +92,14 @@ def detect_symlinks():
 def launcher_wrapper():
     try:
         launcher()
-        T.unbind("<Key>")
-        T.bind("<Key>", anykey_exit)
-        print_log("Hit any key to exit...")
-        T.focus_set()
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         print_log("".join(traceback.format_exception(exc_type, exc_value, exc_traceback)))
+
+    T.unbind("<Key>")
+    T.bind("<Key>", anykey_exit)
+    print_log("Hit any key to exit...")
+    T.focus_set()
 
 def launcher():
     global dl_data
@@ -210,6 +211,10 @@ def launcher():
         # testing purposes
         # dl_data["dl_link"] = "https://file-examples.com/wp-content/uploads/2017/02/zip_2MB.zip"
         # dl_data["sha256"] = "894cca19bba2a6bc496bf72176630083443c951f9e62d4aa328180474a32e9c9"
+        # sample_updates = []
+        # sample_updates.append({'title': 'sample patch 1', 'sha256': '894cca19bba2a6bc496bf72176630083443c951f9e62d4aa328180474a32e9c9' ,'dl_link': 'https://file-examples.com/wp-content/uploads/2017/02/zip_2MB.zip'})
+        # sample_updates.append({'title': 'sample patch 2', 'sha256': '747b20fc197d680b33d7e6393d8ecd9037210d5fdb7165a702fefb87ae0a8d9a' ,'dl_link': 'https://dev-files.blender.org/file/download/bwdp5reejwpkuh5i2oak/PHID-FILE-nui3bpuan4wdvd7yzjrs/sample.tar.gz'})
+        # dl_data["updates"] = sample_updates
         # dl_data["dl_link"] = "https://dev-files.blender.org/file/download/bwdp5reejwpkuh5i2oak/PHID-FILE-nui3bpuan4wdvd7yzjrs/sample.tar.gz"
         # dl_data["sha256"] = "747b20fc197d680b33d7e6393d8ecd9037210d5fdb7165a702fefb87ae0a8d9a"
         if dl_data["dl_link"]:
@@ -223,15 +228,14 @@ def anykey_exit(event):
     if key not in ['\x03','c','']: # allow copy text
         root.destroy()
 
-def start_download():
-    global dl_win, dl_data, pb, dl_active, run_after_dl, progress_txt
-    dl_active = True
-    request = urllib2.urlopen(dl_data['dl_link']);
+def download_and_extract(url, file_sha256, relative_dir=""):
+    global dl_win, pb, dl_active, progress_txt
+    request = urllib2.urlopen(url);
     file_size = int(request.info().getheaders("Content-Length")[0]) 
     file_size_mb = "{0:.1f}".format(float(file_size)/1024.0/1024.0)
-    file_name = dl_data['dl_link'].split('/')[-1]
+    file_name = url.split('/')[-1]
     file_path = tempfile.gettempdir() + '/' + file_name
-    print_log("Downloading %s to %s" % (dl_data['dl_link'], file_path))
+    print_log("Downloading %s to %s" % (url, file_path))
     file = open(file_path, 'wb')
     size = 0
     block_sz = 8192
@@ -251,9 +255,6 @@ def start_download():
         dl_win.update()
     file.close()
 
-    dl_win.quit()
-    dl_win.destroy()
-
     if percentage == 100:
         print_log("Download complete.") 
 
@@ -269,9 +270,9 @@ def start_download():
                     break
                 sha256.update(data)
 
-        if dl_data['sha256'] != sha256.hexdigest():
+        if file_sha256 != sha256.hexdigest():
             print_log("Downloaded file doesn't match with the expected sha256. It might be damaged during transfer or file owner has modified the file.")
-            print_log("File: %s\n\nSha256 expected:\n%s\n\nSha256 found:\n%s" % (file_path, dl_data['sha256'], sha256.hexdigest()))
+            print_log("File: %s\n\nSha256 expected:\n%s\n\nSha256 found:\n%s" % (file_path, file_sha256, sha256.hexdigest()))
             print_log("Exiting.")
             return
 
@@ -282,6 +283,8 @@ def start_download():
             zip_ref = zipfile.ZipFile(file_path, 'r')
         elif file_path.endswith('.tar.gz'): 
             zip_ref = tarfile.open(file_path,'r')
+        else:
+            raise Exception("Unexpected file format")
 
         dest = os.path.expanduser("~") + "/games/"
 
@@ -290,17 +293,49 @@ def start_download():
         elif OS == "windows":
             dest = os.path.expanduser("~\\games\\")
 
+        if relative_dir != "":
+            dest += relative_dir
+        else:
+            if file_path.endswith('.zip'):
+                relative_dir = sorted([x for x in zip_ref.namelist() if x.endswith('/')])[0]
+            elif file_path.endswith('.tar.gz'):
+                relative_dir = os.path.commonprefix(zip_ref.getnames())
+            else:
+                raise Exception("Unexpected file format")
+
         try:
             os.makedirs(dest)
         except Exception as e:
             pass
 
         print_log("Extracting to %s..." % dest)
+
         zip_ref.extractall(dest)
         zip_ref.close()
         print_log("Done.")
-    else:
-        print_log("Download canceled.")
+
+        return relative_dir 
+
+    print_log("Download canceled.")
+    return ""
+
+def start_download():
+    global dl_data, dl_win, dl_active
+    dl_active = True
+
+    file_list = [{"link": dl_data["dl_link"], "sha256": dl_data["sha256"]}]
+    for f in dl_data["updates"]:
+        file_list.append({"link":f["dl_link"], "sha256": f["sha256"]})
+
+    relative_dir = ""
+    for f in file_list:
+        if not dl_active:
+            break
+        relative_dir = download_and_extract(f["link"], f["sha256"], relative_dir)
+        debug_log("relative dir set to: %s" % relative_dir)
+
+    dl_win.quit()
+    dl_win.destroy()
 
 
 def cancel_download():
@@ -318,7 +353,10 @@ class ChoiceDialog(tk.Toplevel):
         self.ok_button = ttk.Button(self, text="OK", command=self.on_ok)
         self.cancel_button = ttk.Button(self, text="Cancel", command=self.on_cancel)
         self.label.pack(side="top", fill="x")
-	R1 = tk.Radiobutton(self, text="Download (%s MB)" % file_size_mb, variable=self.var, value=1)
+        update_text = ""
+        if len(dl_data["updates"]) > 0:
+            update_text = " + patches"
+	R1 = tk.Radiobutton(self, text="Download (%s MB%s)" % (file_size_mb, update_text), variable=self.var, value=1)
 	R1.pack(anchor = tk.W, padx=20, pady=2)
 	R2 = tk.Radiobutton(self, text="Choose existing", variable=self.var, value=2)
 	R2.pack(anchor = tk.W, padx=20)
@@ -382,7 +420,7 @@ def ask_download():
         pb["maximum"]=100
         pb.grid(row=0, columnspan=3, pady=5, padx=40)
 
-        if not dl_data["after_install"]:
+        if len(dl_data["updates"]) > 0 or not dl_data["after_install"]:
             run_after = tk.Checkbutton(dl_win, variable=run_after_dl, text="Run after installation",  onvalue=1, offvalue=0) 
         else:
             run_after = tk.Label(dl_win, text="Please read dependency notes after the installation.")
@@ -412,7 +450,7 @@ def ask_download():
             if s.returncode != 0 or (OS == 'windows' and error):
                 print_log("Game not found.") 
         else:
-            if dl_data["after_install"]:
+            if len(dl_data["updates"]) == 0 and dl_data["after_install"]:
                 print_log("After Installation Notes")
                 print_log(dl_data["after_install"])
                 print_log("You can quit now and join again to see if dependencies are already met.")
