@@ -23,7 +23,7 @@ from subprocess import Popen, PIPE
 from pkg_resources import parse_version
 
 API_ENDPOINT = "https://arena.sh"
-VERSION = "0.2.3"
+VERSION = "0.2.4"
 DEBUG=0
 T = None
 root = None
@@ -297,7 +297,7 @@ def download_and_extract(url, file_sha256, relative_dir=""):
             dest += relative_dir
         else:
             if file_path.endswith('.zip'):
-                relative_dir = sorted([x for x in zip_ref.namelist() if x.endswith('/')])[0]
+                relative_dir = sorted([x for x in zip_ref.namelist() if x.endswith('/')])[0].split('/')[0]
             elif file_path.endswith('.tar.gz'):
                 relative_dir = os.path.commonprefix(zip_ref.getnames())
             else:

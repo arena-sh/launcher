@@ -11,7 +11,7 @@ if (sys.platform == 'win32'):
 
 setup(
     name = 'ArenaSH',
-    version = '0.2.3',
+    version = '0.2.4',
     description = 'ArenaSH Game Launcher',
     author = 'ArenaSH',
     author_email = 'arenabash@gmail.com',
