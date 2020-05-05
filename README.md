@@ -78,14 +78,9 @@ Please report any bugs related to the launcher at [issues](https://github.com/ar
 While developing at OSX (preferred dev platform) you can use `--dev` parameter during build so dmg won't be created but the app will be bundled only. To force the system to detect updates, you should delete your existing launcher in `/Applications` directory, and select/rename the one in `release/` to make Finder aware of it.
 
 ### License
-GPLv2
+GPLv3 - some assets are excluded, see LICENSE file complete information.
 
 Build tools included:  
 create-dmg - MIT  
 dmg-license - MIT  
 makeself - GPLv2  
-
-Images:  
-Crosshair & Right Arrow  
-Icons made by [Freepik](https://www.freepik.com) from www.flaticon.com  
-
